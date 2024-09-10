@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Plotter</title>
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        canvas {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div style="width:80%; margin: auto;">
+        <canvas id="myChart"></canvas>
+        <div>
+            <label for="stdDevInput">Standard Deviation:</label>
+            <input type="number" id="stdDevInput" value="15">
+            <label for="meanInput">Mean Value:</label>
+            <input type="number" id="meanInput" value="50">
+            <label for="numSamplesInput">Number of Samples:</label>
+            <input type="number" id="numSamplesInput" value="50">
+            <label for="numBinsInput">Number of Bins:</label>
+            <input type="number" id="numBinsInput" value="10">
+            <button onclick="generateData()">Generate Random Data</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to generate random data with a Gaussian distribution
+        function generateData() {
+            const stdDev = parseFloat(document.getElementById('stdDevInput').value);
+            const mean = parseFloat(document.getElementById('meanInput').value);
+            const numSamples = parseInt(document.getElementById('numSamplesInput').value);
+            const numBins = parseInt(document.getElementById('numBinsInput').value);
+
+            const data = [];
+            const binWidth = stdDev * 3 / numBins; // Keep bin range constant (3 standard deviations)
+
+            for (let i = 0; i < numSamples; i++) {
+                const value = gaussianRandom(mean, stdDev);
+                data.push(value);
+            }
+
+            updateChart(data, numBins, binWidth);
+        }
+
+        // Function to generate random numbers with a Gaussian distribution
+        function gaussianRandom(mean, stdDev) {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v) * stdDev + mean;
+        }
+
+        // Function to update the chart with new data
+        function updateChart(data, numBins, binWidth) {
+            const histogramData = createHistogramData(data, numBins, binWidth);
+            const binLabels = histogramData.map((_, index) => (index * binWidth + binWidth / 2).toFixed(2));
+            myChart.data.labels = binLabels;
+            myChart.data.datasets[0].data = histogramData;
+            myChart.update();
+        }
+
+        // Function to create histogram data from raw data
+        function createHistogramData(data, numBins, binWidth) {
+            const histogramData = new Array(numBins).fill(0);
+
+            // Calculate bin index for each data point
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+
+            data.forEach(value => {
+                const binIndex = Math.min(Math.floor((value - min) / binWidth), numBins - 1);
+                histogramData[binIndex]++;
+            });
+
+            return histogramData;
+        }
+
+        // Configuration
+        const config = {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Histogram',
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    data: [],
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Bin Range'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Frequency'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Histogram with Gaussian Distribution'
+                    }
+                }
+            }
+        };
+
+        // Initialize Chart
+        var myChart = new Chart(
+            document.getElementById('myChart'),
+            config
+        );
+    </script>
+</body>
+</html>
